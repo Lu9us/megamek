@@ -375,10 +375,7 @@ public class TacticalPrincess extends Princess {
     @Override
     protected void calculateDeployment() {
         // get the first unit
-        getEntitiesOwned().forEach((entity -> {
-            entity.getEntityType()
-        }));
-
+        BattleGroup battleGroup = BattleGroupHelpers.createBattleGroup(game,this);
 
 
         final int entityNum = game.getFirstDeployableEntityNum(game.getTurnForPlayer(localPlayerNumber));
@@ -439,7 +436,7 @@ public class TacticalPrincess extends Princess {
         deployElevation -= deployHex.getLevel();
         deploy(entityNum, deployCoords, decentFacing, deployElevation);
     }
-    
+
     /**
      * Calculate the deployment elevation for the given entity.
      * Gun Emplacements should deploy on the rooftop of the building for maximum visibility.
