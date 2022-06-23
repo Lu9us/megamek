@@ -68,7 +68,7 @@ public class FiringPlan extends ArrayList<WeaponFireInfo> implements Comparable<
     /**
      * @return The amount of damage based on the damage of each weapon and their odds of hitting.
      */
-    synchronized double getExpectedDamage() {
+    public synchronized double getExpectedDamage() {
         double expectedDamage = 0;
         for (WeaponFireInfo weaponFireInfo : this) {
             expectedDamage += weaponFireInfo.getExpectedDamageOnHit() * weaponFireInfo.getProbabilityToHit();
@@ -127,7 +127,7 @@ public class FiringPlan extends ArrayList<WeaponFireInfo> implements Comparable<
      *
      * @return The list of actions as a vector.
      */
-    synchronized Vector<EntityAction> getEntityActionVector() {
+    public synchronized Vector<EntityAction> getEntityActionVector() {
         Vector<EntityAction> actionVector = new Vector<>();
         if (size() == 0) {
             return actionVector;
@@ -151,7 +151,7 @@ public class FiringPlan extends ArrayList<WeaponFireInfo> implements Comparable<
     /*
      * Returns a string describing the firing actions, their likelihood to hit, and damage
      */
-    String getDebugDescription(boolean detailed) {
+    public String getDebugDescription(boolean detailed) {
         if (size() == 0) {
             return "Empty FiringPlan!";
         }
@@ -270,7 +270,7 @@ public class FiringPlan extends ArrayList<WeaponFireInfo> implements Comparable<
     /**
      * Hole punchers before crit seekers
      */
-    void sortPlan() {
+    public void sortPlan() {
         this.sort((o1, o2) -> {
             Mounted weapon1 = o1.getWeapon();
             Mounted weapon2 = o2.getWeapon();

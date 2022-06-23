@@ -100,7 +100,7 @@ public class Precognition implements Runnable {
      * @param c The packet to be handled.
      */
     @SuppressWarnings("unchecked")
-    void handlePacket(Packet c) {
+    public void handlePacket(Packet c) {
         if (c == null) {
             LogManager.getLogger().warn("Client: got null packet");
             return;
@@ -290,7 +290,7 @@ public class Precognition implements Runnable {
         }
     }
 
-    synchronized void unPause() {
+    public synchronized void unPause() {
         getWaitWhenDone().set(false);
         notifyAll();
     }
@@ -311,7 +311,7 @@ public class Precognition implements Runnable {
      * Makes sure pathEnumerator has up-to-date information about other units
      * locations call this right before making a move. automatically pauses.
      */
-    void ensureUpToDate() {
+    public void ensureUpToDate() {
         try {
             pause();
             for (Entity entity : getGame().getEntitiesVector()) {
@@ -374,7 +374,7 @@ public class Precognition implements Runnable {
         }
     }
 
-    void signalDone() {
+    public void signalDone() {
         getDone().set(true);
     }
 
@@ -554,7 +554,7 @@ public class Precognition implements Runnable {
         }
     }
 
-    PathEnumerator getPathEnumerator() {
+    public PathEnumerator getPathEnumerator() {
         PATH_ENUMERATOR_LOCK.readLock().lock();
         try {
             LogManager.getLogger().debug("PATH_ENUMERATOR_LOCK read locked.");
@@ -604,7 +604,7 @@ public class Precognition implements Runnable {
         return owner;
     }
 
-    void resetGame() {
+    public void resetGame() {
         GAME_LOCK.lock();
         try {
             LogManager.getLogger().debug("GAME_LOCK write locked.");

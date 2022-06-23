@@ -1090,7 +1090,8 @@ public class FireControl {
      * @param game The current {@link Game}
      * @return A description of the differences or NULL if there are none.
      */
-    @Nullable String checkAllGuesses(final Entity shooter, final Game game) {
+    @Nullable
+    public String checkAllGuesses(final Entity shooter, final Game game) {
         // This really should only be done for debugging purposes.  Regular play should avoid the overhead.
         if (LogManager.getLogger().getLevel().isMoreSpecificThan(Level.INFO)) {
             return null;
@@ -2062,7 +2063,7 @@ public class FireControl {
      * @param params - the appropriate firing plan calculation parameters
      * @return the 'best' firing plan - uses heat as disutility and includes the possibility of twisting
      */
-    FiringPlan determineBestFiringPlan(final FiringPlanCalculationParameters params) {
+    public FiringPlan determineBestFiringPlan(final FiringPlanCalculationParameters params) {
         // unpack parameters for easier reference
         final Entity shooter = params.getShooter();
         final Targetable target = params.getTarget();
@@ -2258,8 +2259,7 @@ public class FireControl {
      * @param game The current {@link Game}
      * @return A list of potential targets.
      */
-    static List<Targetable> getAllTargetableEnemyEntities(final Player player, final Game game,
-                                                          final FireControlState fireControlState) {
+    public static List<Targetable> getAllTargetableEnemyEntities(final Player player, final Game game, final FireControlState fireControlState) {
         final List<Targetable> targetableEnemyList = new ArrayList<>();
 
         // Go through every unit in the game.
@@ -2288,7 +2288,7 @@ public class FireControl {
      * @param game The current {@link Game}
      * @return The best firing plan according to our calculations.
      */
-    FiringPlan getBestFiringPlan(final Entity shooter,
+  public FiringPlan getBestFiringPlan(final Entity shooter,
                                  final IHonorUtil honorUtil,
                                  final Game game,
                                  final Map<Mounted, Double> ammoConservation) {
@@ -2396,8 +2396,7 @@ public class FireControl {
     /**
      * Makes sure ammo is loaded for each weapon
      */
-    void loadAmmo(final Entity shooter,
-                  final FiringPlan plan) {
+    public void loadAmmo(final Entity shooter, final FiringPlan plan) {
         if (null == shooter) {
             return;
         }

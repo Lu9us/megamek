@@ -346,7 +346,7 @@ public class Report implements Serializable {
                     href(ENTITY_LINK + entity.getId(), entity.getShortName());
 
             if ((entity.getCrew().getSize() >= 1) && !entity.getCrew().getNickname().isBlank()) {
-                unitName += fgColor(ownerColor, ' ' :wq+ entity.getCrew().getNickname().toUpperCase());
+                unitName += fgColor(ownerColor, ' ' + entity.getCrew().getNickname().toUpperCase());
             }
 
             add(unitName, true);

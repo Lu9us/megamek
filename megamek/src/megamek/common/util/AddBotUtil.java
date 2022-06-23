@@ -18,6 +18,7 @@ import megamek.client.bot.TestBot;
 import megamek.client.bot.princess.BehaviorSettings;
 import megamek.client.bot.princess.BehaviorSettingsFactory;
 import megamek.client.bot.princess.Princess;
+import megamek.client.bot.tacticalPrincess.TacticalPrincess;
 import megamek.client.bot.ui.swing.BotGUI;
 import megamek.codeUtilities.StringUtility;
 import megamek.common.Game;
@@ -188,7 +189,7 @@ public class AddBotUtil {
         }
         
         final Player target = possible.get();
-        final Princess princess = new Princess(target.getName(), host, port);
+        final Princess princess = new TacticalPrincess(target.getName(), host, port);
         princess.setBehaviorSettings(behavior);
         princess.getGame().addGameListener(new BotGUI(princess));
         try {
@@ -203,6 +204,10 @@ public class AddBotUtil {
 
     BotClient makeNewPrincessClient(final Player target, final String host, final int port) {
         return new Princess(target.getName(), host, port);
+    }
+
+    BotClient makeNewTacticalPrincessClient(final Player target, final String host, final int port) {
+        return new TacticalPrincess(target.getName(), host, port);
     }
 
     BotClient makeNewTestBotClient(final Player target, final String host, final int port) {

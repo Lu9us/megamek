@@ -455,11 +455,11 @@ public class PathEnumerator {
         LogManager.getLogger().debug(path.length() + ":" + path + ":" + whyNot);
     }
 
-    protected Map<Integer, List<BulldozerMovePath>> getLongRangePaths() {
+    public Map<Integer, List<BulldozerMovePath>> getLongRangePaths() {
         return longRangePaths;
     }
     
-    protected Map<Integer, List<MovePath>> getUnitPaths() {
+    public Map<Integer, List<MovePath>> getUnitPaths() {
         return unitPaths;
     }
 
