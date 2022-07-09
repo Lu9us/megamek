@@ -1924,7 +1924,7 @@ public class ChatLounge extends AbstractPhaseDisplay implements
         if (bcd.getResult() == DialogResult.CANCELLED) {
             return;
         }
-        Princess botClient = Princess.createPrincess(bcd.getBotName(), client().getHost(), 
+        Princess botClient = Princess.createPrincess(bcd.getBotName(), client().getHost(),
                 client().getPort(), bcd.getBehaviorSettings());
         botClient.setClientGUI(clientgui);
         botClient.getGame().addGameListener(new BotGUI(botClient));

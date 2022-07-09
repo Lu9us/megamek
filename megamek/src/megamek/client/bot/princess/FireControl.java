@@ -1140,7 +1140,7 @@ public class FireControl {
      *            Set TRUE if the shooter is an Aero unit. Overheating Aeros
      *            take stiffer penalties.
      */
-    void calculateUtility(final FiringPlan firingPlan,
+   protected void calculateUtility(final FiringPlan firingPlan,
                           final int overheatTolerance,
                           final boolean shooterIsAero) {
         int overheat = 0;

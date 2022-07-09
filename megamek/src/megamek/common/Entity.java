@@ -855,6 +855,18 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
         return CrewType.SINGLE;
     }
 
+    public boolean hasIndirectWeapons() {
+        return getWeaponList().stream().anyMatch(
+                weapon -> {
+                    if ( weapon.getType() instanceof Weapon) {
+                        Weapon weaponType = (Weapon) weapon.getType();
+                        return  weaponType.hasIndirectFire();
+                    }
+                    return false;
+                }
+        );
+    }
+
     protected void initMilitary() {
         military = hasViableWeapons();
     }

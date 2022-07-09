@@ -144,7 +144,7 @@ public class MultiTargetFireControl extends FireControl {
      *            take stiffer penalties.
      */
     @Override
-    void calculateUtility(final FiringPlan firingPlan,
+   protected void calculateUtility(final FiringPlan firingPlan,
                           final int overheatTolerance,
                           final boolean shooterIsAero) {
         int overheat = 0;

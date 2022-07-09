@@ -56,7 +56,7 @@ public class UnitBehavior {
     /**
      * Gets (and calculates, if necessary), the behavior type for the given entity.
      */
-    public BehaviorType getBehaviorType(Entity entity, Princess owner) {
+    public BehaviorType  getBehaviorType(Entity entity, Princess owner) {
         if (!entityBehaviors.containsKey(entity.getId())) {
             entityBehaviors.put(entity.getId(), calculateUnitBehavior(entity, owner));
         }

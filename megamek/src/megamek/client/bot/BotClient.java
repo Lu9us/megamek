@@ -202,6 +202,10 @@ public abstract class BotClient extends Client {
 
     protected abstract void calculateDeployment() throws Exception;
 
+    protected abstract void executeTasks(GamePhase phase);
+
+    protected abstract void processTasks();
+
     protected void initTargeting() { }
     
     /**
@@ -250,6 +254,8 @@ public abstract class BotClient extends Client {
 
     protected abstract void checkMorale();
 
+    protected abstract void weightDeploymentCoords(List<RankedCoords> coords, Entity entity );
+
     @Override
     protected boolean keepGameLog() {
         return false;
@@ -292,6 +298,16 @@ public abstract class BotClient extends Client {
         for (Entity entity : game.getEntitiesVector()) {
             if (entity.getOwner().equals(getLocalPlayer())
                 && (entity.getPosition() != null) && !entity.isOffBoard()) {
+                result.add(entity);
+            }
+        }
+        return result;
+    }
+
+    public List<Entity> getAllEntitiesOwned() {
+        ArrayList<Entity> result = new ArrayList<>();
+        for (Entity entity : game.getEntitiesVector()) {
+            if (entity.getOwner().equals(getLocalPlayer())) {
                 result.add(entity);
             }
         }
@@ -352,6 +368,9 @@ public abstract class BotClient extends Client {
         super.changePhase(phase);
 
         try {
+            sendChat(phase.name());
+            executeTasks(game.getPhase());
+            processTasks();
             switch (phase) {
                 case LOUNGE:
                     sendChat(Messages.getString("BotClient.Hi"));
@@ -554,7 +573,7 @@ public abstract class BotClient extends Client {
                     || (game.getPhase() == GamePhase.PREFIRING)) {
                 calculatePrephaseTurn();
             }
-            
+
             return true;
         } catch (Exception ex) {
             LogManager.getLogger().error("", ex);
@@ -906,7 +925,7 @@ public abstract class BotClient extends Client {
                 rc.fitness += getClusterTracker().getBoardClusterSize(deployed_ent, rc.coords, false);
             }
         }
-        
+        weightDeploymentCoords(validCoords, deployed_ent);
         // Now sort the valid array.
         Collections.sort(validCoords);
 
@@ -1202,7 +1221,7 @@ public abstract class BotClient extends Client {
         return boardClusterTracker;
     }
 
-    private static class RankedCoords implements Comparable<RankedCoords> {
+    protected static class RankedCoords implements Comparable<RankedCoords> {
         private Coords coords;
         private double fitness;
 

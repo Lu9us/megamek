@@ -21,6 +21,9 @@ import megamek.client.bot.princess.FireControl.FireControlType;
 import megamek.client.bot.princess.FiringPlanCalculationParameters.Builder;
 import megamek.client.bot.princess.PathRanker.PathRankerType;
 import megamek.client.bot.princess.UnitBehavior.BehaviorType;
+import megamek.client.bot.tacticalPrincess.AiOrganisation;
+import megamek.client.bot.tacticalPrincess.AiOrganisationController;
+import megamek.client.bot.tacticalPrincess.AiOrganisationHelper;
 import megamek.client.ui.SharedUtility;
 import megamek.codeUtilities.StringUtility;
 import megamek.common.*;
@@ -29,6 +32,7 @@ import megamek.common.MovePath.MoveStepType;
 import megamek.common.actions.*;
 import megamek.common.annotations.Nullable;
 import megamek.common.containers.PlayerIDandList;
+import megamek.common.enums.GamePhase;
 import megamek.common.event.GameCFREvent;
 import megamek.common.event.GamePlayerChatEvent;
 import megamek.common.net.enums.PacketCommand;
@@ -71,6 +75,7 @@ public class Princess extends BotClient {
     private double moveEvaluationTimeEstimate = 0;
     private final Precognition precognition;
     private final Thread precogThread;
+    private AiOrganisationController battleGroup;
     /**
      * Mapping to hold the damage allocated to each targetable, stored by ID.
      * Used to allocate damage more intelligently and avoid overkill.
@@ -374,6 +379,10 @@ public class Princess extends BotClient {
 
     @Override
     protected void calculateDeployment() {
+        if (battleGroup == null) {
+             battleGroup = AiOrganisationHelper.createBattleGroup(this);
+        }
+
         // get the first unit
         final int entityNum = game.getFirstDeployableEntityNum(game.getTurnForPlayer(localPlayerNumber));
         sendChat("deploying unit " + getEntity(entityNum).getChassis(), Level.INFO);
@@ -1759,6 +1768,34 @@ public class Princess extends BotClient {
                              behaviorSettings.getSelfPreservationIndex(),
                              getLocalPlayer(),
                              game);
+    }
+
+    @Override
+    protected void weightDeploymentCoords(List<BotClient.RankedCoords> coords, Entity entity) {
+        AiOrganisation org = battleGroup.getOrgForEntity(entity);
+        if(org != null) {
+            for (RankedCoords coordintes : coords) {
+                for(Entity entityLance : org.getUnits()) {
+                  if (entityLance.isDeployed()) {
+                      coordintes.setFitness(coordintes.getFitness() + ((float) coordintes.getCoords().distance(entityLance.getPosition()) * 100 ));
+                  }
+                }
+            }
+        }
+    }
+
+    @Override
+    public void executeTasks(GamePhase gamePhase) {
+        if(battleGroup != null) {
+            battleGroup.executeAiTasks(gamePhase);
+        }
+    }
+
+    @Override
+    public void processTasks() {
+        if(battleGroup != null) {
+            battleGroup.processAiTasks();
+        }
     }
 
     IHonorUtil getHonorUtil() {

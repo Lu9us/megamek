@@ -21,6 +21,7 @@ import megamek.common.MovePath.MoveStepType;
 import megamek.common.actions.*;
 import megamek.common.containers.PlayerIDandList;
 import megamek.common.enums.AimingMode;
+import megamek.common.enums.GamePhase;
 import megamek.common.event.GamePlayerChatEvent;
 import megamek.common.options.OptionsConstants;
 import megamek.common.pathfinder.BoardClusterTracker;
@@ -1779,6 +1780,17 @@ public class TestBot extends BotClient {
     }
 
     @Override
+    protected void executeTasks(GamePhase phase) {
+
+
+    }
+
+    @Override
+    protected void processTasks() {
+
+    }
+
+    @Override
     protected MovePath continueMovementFor(Entity entity) {
         Objects.requireNonNull(entity);
         LogManager.getLogger().info("Contemplating movement of " + entity.getShortName() + " " + entity.getId());
@@ -2506,5 +2518,10 @@ public class TestBot extends BotClient {
     @Override
     protected void checkMorale() {
         // unused.
+    }
+
+    @Override
+    protected void weightDeploymentCoords(List<RankedCoords> coords, Entity entity) {
+        return;
     }
 }

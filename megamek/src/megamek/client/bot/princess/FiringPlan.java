@@ -57,7 +57,7 @@ public class FiringPlan extends ArrayList<WeaponFireInfo> implements Comparable<
     /**
      * @return The total heat for all weapons being fired with this plan.
      */
-    synchronized int getHeat() {
+    synchronized public int getHeat() {
         int heat = 0;
         for (WeaponFireInfo weaponFireInfo : this) {
             heat += weaponFireInfo.getHeat();
