@@ -5,21 +5,18 @@ import megamek.client.bot.princess.FiringPlan;
 import megamek.client.bot.princess.FiringPlanCalculationParameters;
 import megamek.client.bot.princess.Princess;
 import megamek.client.bot.tacticalPrincess.AiOrganisation;
-import megamek.common.Entity;
+import megamek.client.bot.tacticalPrincess.tasks.state.TaskResult;
 import megamek.common.enums.GamePhase;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class EngageEnemies extends AbstractAITask{
     FireControl fireControl;
     public EngageEnemies(AiOrganisation org, Princess owner) {
         super(org, owner);
-        executionPhase = GamePhase.PREFIRING;
+        executionPhases = new GamePhase[]{GamePhase.PREFIRING};
     }
 
     @Override
-    public void iniit() {
+    public void init() {
         fireControl = new TaskBasedFireControl(owner, org);
     }
 
@@ -35,7 +32,6 @@ public class EngageEnemies extends AbstractAITask{
 
     @Override
     public void performTask() {
-        List<Entity> enemyForces = owner.getEnemyEntities();
 
         org.getUnits().forEach(
                 entity -> {
@@ -43,8 +39,9 @@ public class EngageEnemies extends AbstractAITask{
                          .Builder()
                          .setShooter(entity)
                          .build();
-                FiringPlan plan = fireControl.determineBestFiringPlan(params);
-
+                FiringPlan plan = fireControl
+                        .getBestFiringPlan(entity, owner.getHonorUtil(), owner.getGame() ,owner.calcAmmoConservation(entity));
+                org.firingPlanMap.put(entity.getId(), plan);
                 }
         );
 

@@ -1,8 +1,9 @@
 package megamek.client.bot.tacticalPrincess.tasks;
 
-import megamek.client.bot.BotClient;
 import megamek.client.bot.princess.Princess;
 import megamek.client.bot.tacticalPrincess.AiOrganisation;
+import megamek.client.bot.tacticalPrincess.tasks.state.TaskResult;
+import megamek.client.bot.tacticalPrincess.tasks.state.TaskState;
 import megamek.common.enums.GamePhase;
 
 public abstract class AbstractAITask implements AILanceTask {
@@ -10,7 +11,7 @@ public abstract class AbstractAITask implements AILanceTask {
     AiOrganisation org;
     Princess owner;
     TaskResult result;
-    GamePhase executionPhase;
+    GamePhase[] executionPhases;
 
     AbstractAITask(AiOrganisation org, Princess owner) {
         taskState = TaskState.WAITING;
@@ -29,8 +30,8 @@ public abstract class AbstractAITask implements AILanceTask {
     }
 
     @Override
-    public GamePhase getExecutionPhase() {
-        return executionPhase;
+    public GamePhase[] getExecutionPhases() {
+        return executionPhases;
     }
 }
 

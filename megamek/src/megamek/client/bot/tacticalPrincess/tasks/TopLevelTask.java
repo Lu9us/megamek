@@ -2,17 +2,24 @@ package megamek.client.bot.tacticalPrincess.tasks;
 
 import megamek.client.bot.princess.Princess;
 import megamek.client.bot.tacticalPrincess.AiOrganisation;
+import megamek.client.bot.tacticalPrincess.tasks.state.TaskResult;
+import megamek.common.Coords;
 import megamek.common.enums.GamePhase;
 
 public class TopLevelTask extends AbstractAITask{
 
     public TopLevelTask(AiOrganisation org, Princess owner) {
         super(org, owner);
-        executionPhase = GamePhase.INITIATIVE_REPORT;
+        executionPhases = new GamePhase[]{
+                GamePhase.INITIATIVE_REPORT,
+                GamePhase.PREFIRING,
+                GamePhase.PREMOVEMENT
+        };
+
     }
 
     @Override
-    public void iniit() {
+    public void init() {
 
     }
 
@@ -29,11 +36,14 @@ public class TopLevelTask extends AbstractAITask{
 
     @Override
     public void performTask() {
-        // if a lance enters this task they haven't been assigned any other so we should give them
-        // to do
+
         if(org.getTasks().size() < 2) {
             org.addTask(new PatrolTask(org, owner));
         }
+        if(org.getTasks().stream().noneMatch(task -> task instanceof MoveTo)) {
+            org.addTask(new MoveTo(org, owner, new Coords(owner.getGame().getBoard().getWidth(), owner.getGame().getBoard().getHeight())));
+        }
+
     }
 
     @Override

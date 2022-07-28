@@ -60,6 +60,7 @@ public class Princess extends BotClient {
     private final IHonorUtil honorUtil = new HonorUtil();
 
     private boolean initialized = false;
+    private boolean useTaskBasedAI = true;
    
     // path rankers and fire controls, organized by their explicitly given types to avoid confusion
     private HashMap<PathRankerType, IPathRanker> pathRankers;
@@ -75,7 +76,9 @@ public class Princess extends BotClient {
     private double moveEvaluationTimeEstimate = 0;
     private final Precognition precognition;
     private final Thread precogThread;
-    private AiOrganisationController battleGroup;
+
+
+    private AiOrganisationController aiOrg;
     /**
      * Mapping to hold the damage allocated to each targetable, stored by ID.
      * Used to allocate damage more intelligently and avoid overkill.
@@ -132,6 +135,10 @@ public class Princess extends BotClient {
         return atc;
     }
 
+
+    public AiOrganisationController getAiOrg() {
+        return aiOrg;
+    }
     /**
      * Gets the appropriate path ranker instance given an entity
      * Uses the entity's EType flags to figure out which one to return
@@ -379,9 +386,6 @@ public class Princess extends BotClient {
 
     @Override
     protected void calculateDeployment() {
-        if (battleGroup == null) {
-             battleGroup = AiOrganisationHelper.createBattleGroup(this);
-        }
 
         // get the first unit
         final int entityNum = game.getFirstDeployableEntityNum(game.getTurnForPlayer(localPlayerNumber));
@@ -603,8 +607,12 @@ public class Princess extends BotClient {
                 final Map<Mounted, Double> ammoConservation = calcAmmoConservation(shooter);
 
                 // entity that can act this turn make sure weapons are loaded
-                final FiringPlan plan = getFireControl(shooter).getBestFiringPlan(shooter,
-                        getHonorUtil(), game, ammoConservation);
+                 FiringPlan plan;
+                 if(aiOrg.hasFiringPlanForShooter(shooter)) {
+                     plan = aiOrg.getFiringPlanForShooter(shooter);
+                 } else {
+                     plan = getFireControl(shooter).getBestFiringPlan(shooter, getHonorUtil(), game, ammoConservation);
+                 }
                 if ((null != plan) && (plan.getExpectedDamage() > 0)) {
                     getFireControl(shooter).loadAmmo(shooter, plan);
                     plan.sortPlan();
@@ -725,7 +733,7 @@ public class Princess extends BotClient {
         sendDone(true);
     }
 
-    private Map<Mounted, Double> calcAmmoConservation(final Entity shooter) {
+    public Map<Mounted, Double> calcAmmoConservation(final Entity shooter) {
         final double aggroFactor = (10 - getBehaviorSettings().getHyperAggressionIndex()) * 2;
         final StringBuilder msg = new StringBuilder("\nCalculating ammo conservation for ")
                 .append(shooter.getDisplayName());
@@ -1195,94 +1203,98 @@ public class Princess extends BotClient {
         Objects.requireNonNull(entity, "Entity is null.");
 
         try {
-            // figure out who moved last, and whose move lists need to be updated
+        if(aiOrg != null && aiOrg.hasPathForEntity(entity)) {
+          MovePath path = aiOrg.getOrgForEntity(entity).pathMap.get(entity.getId());
+          sendChat("Entity: " + entity + " pathed to " + path);
+          return path;
+        } else if (!aiOrg.hasPathForEntity(entity)){
+            return new MovePath(game, entity);
+        } else if (!useTaskBasedAI) {
 
-            // moves this entity during movement phase
-            LogManager.getLogger().debug("Moving " + entity.getDisplayName() + " (ID " + entity.getId() + ")");
-            getPrecognition().ensureUpToDate();
 
-            if (isFallingBack(entity)) {
-                String msg = entity.getDisplayName();
-                if (getFallBack()) {
-                    msg += " is falling back.";
-                } else if (entity.isCrippled()) {
-                    msg += " is crippled and withdrawing.";
-                }
-                LogManager.getLogger().debug(msg);
-                sendChat(msg, Level.ERROR);
+                // figure out who moved last, and whose move lists need to be updated
 
-                // If this entity is falling back, able to flee the board, on 
-                // its home edge, and must flee, do so.
-                if (mustFleeBoard(entity)) {
-                    final MovePath mp = new MovePath(game, entity);
-                    mp.addStep(MoveStepType.FLEE);
-                    return mp;
-                }
+                // moves this entity during movement phase
+                LogManager.getLogger().debug("Moving " + entity.getDisplayName() + " (ID " + entity.getId() + ")");
+                getPrecognition().ensureUpToDate();
 
-                // If we want to flee, but cannot, eject the crew.
-                if (isImmobilized(entity) && entity.isEjectionPossible()) {
-                    msg = entity.getDisplayName() + " is immobile. Abandoning unit.";
-                    LogManager.getLogger().info(msg);
+                if (isFallingBack(entity)) {
+                    String msg = entity.getDisplayName();
+                    if (getFallBack()) {
+                        msg += " is falling back.";
+                    } else if (entity.isCrippled()) {
+                        msg += " is crippled and withdrawing.";
+                    }
+                    LogManager.getLogger().debug(msg);
                     sendChat(msg, Level.ERROR);
-                    final MovePath mp = new MovePath(game, entity);
-                    mp.addStep(MoveStepType.EJECT);
-                    return mp;
+
+                    // If this entity is falling back, able to flee the board, on
+                    // its home edge, and must flee, do so.
+                    if (mustFleeBoard(entity)) {
+                        final MovePath mp = new MovePath(game, entity);
+                        mp.addStep(MoveStepType.FLEE);
+                        return mp;
+                    }
+
+                    // If we want to flee, but cannot, eject the crew.
+                    if (isImmobilized(entity) && entity.isEjectionPossible()) {
+                        msg = entity.getDisplayName() + " is immobile. Abandoning unit.";
+                        LogManager.getLogger().info(msg);
+                        sendChat(msg, Level.ERROR);
+                        final MovePath mp = new MovePath(game, entity);
+                        mp.addStep(MoveStepType.EJECT);
+                        return mp;
+                    }
                 }
-            }
 
-            final List<MovePath> paths = getMovePathsAndSetNecessaryTargets(entity, false);
+                final List<MovePath> paths = getMovePathsAndSetNecessaryTargets(entity, false);
 
-            if (null == paths) {
-                LogManager.getLogger().warn("No valid paths found.");
-                return performPathPostProcessing(new MovePath(game, entity), 0);
-            }
-
-            final double thisTimeEstimate = (paths.size() * moveEvaluationTimeEstimate) / 1e3;
-            if (LogManager.getLogger().getLevel().isLessSpecificThan(Level.INFO)) {
-                String timeestimate = "unknown.";
-                if (0 != thisTimeEstimate) {
-                    timeestimate = (int) thisTimeEstimate + " seconds";
+                if (null == paths) {
+                    LogManager.getLogger().warn("No valid paths found.");
+                    return performPathPostProcessing(new MovePath(game, entity), 0);
                 }
-                final String message = "Moving " + entity.getChassis() + ". "
-                        + Long.toString(paths.size())
-                        + " paths to consider.  Estimated time to completion: "
-                        + timeestimate;
-                sendChat(message);
+
+                final double thisTimeEstimate = (paths.size() * moveEvaluationTimeEstimate) / 1e3;
+                if (LogManager.getLogger().getLevel().isLessSpecificThan(Level.INFO)) {
+                    String timeestimate = "unknown.";
+                    if (0 != thisTimeEstimate) {
+                        timeestimate = (int) thisTimeEstimate + " seconds";
+                    }
+                    final String message = "Moving " + entity.getChassis() + ". " + Long.toString(paths.size()) + " paths to consider.  Estimated time to completion: " + timeestimate;
+                    sendChat(message);
+                }
+
+                final long startTime = System.currentTimeMillis();
+                getPathRanker(entity).initUnitTurn(entity, getGame());
+                final double fallTolerance = getBehaviorSettings().getFallShameIndex() / 10d;
+
+                final List<RankedPath> rankedpaths = getPathRanker(entity).rankPaths(paths, getGame(), getMaxWeaponRange(entity), fallTolerance, getEnemyEntities(), getFriendEntities());
+
+                final long stop_time = System.currentTimeMillis();
+
+                // update path evaluation time estimate
+                final double updatedEstimate = ((double) (stop_time - startTime)) / ((double) paths.size());
+                if (0 == moveEvaluationTimeEstimate) {
+                    moveEvaluationTimeEstimate = updatedEstimate;
+                }
+
+                moveEvaluationTimeEstimate = 0.5 * (updatedEstimate + moveEvaluationTimeEstimate);
+
+                if (rankedpaths.isEmpty()) {
+                    return performPathPostProcessing(new MovePath(game, entity), 0);
+                }
+
+                LogManager.getLogger().debug("Path ranking took " + (stop_time - startTime) + " millis");
+
+                final RankedPath bestpath = getPathRanker(entity).getBestPath(rankedpaths);
+                LogManager.getLogger().info("Best Path: " + bestpath.getPath() + "  Rank: " + bestpath.getRank());
+
+                return performPathPostProcessing(bestpath);
             }
-
-            final long startTime = System.currentTimeMillis();
-            getPathRanker(entity).initUnitTurn(entity, getGame());
-            final double fallTolerance =
-                    getBehaviorSettings().getFallShameIndex() / 10d;
-                       
-            final List<RankedPath> rankedpaths = getPathRanker(entity).rankPaths(paths,
-                    getGame(), getMaxWeaponRange(entity), fallTolerance, getEnemyEntities(),
-                    getFriendEntities());
-
-            final long stop_time = System.currentTimeMillis();
-
-            // update path evaluation time estimate
-            final double updatedEstimate =
-                    ((double) (stop_time - startTime)) / ((double) paths.size());
-            if (0 == moveEvaluationTimeEstimate) {
-                moveEvaluationTimeEstimate = updatedEstimate;
-            }
-            
-            moveEvaluationTimeEstimate = 0.5 * (updatedEstimate + moveEvaluationTimeEstimate);
-            
-            if (rankedpaths.isEmpty()) {
-                return performPathPostProcessing(new MovePath(game, entity), 0);
-            }
-
-            LogManager.getLogger().debug("Path ranking took " + (stop_time - startTime) + " millis");
-
-            final RankedPath bestpath = getPathRanker(entity).getBestPath(rankedpaths);
-            LogManager.getLogger().info("Best Path: " + bestpath.getPath() + "  Rank: " + bestpath.getRank());
-
-            return performPathPostProcessing(bestpath);
         } finally {
             precognition.unPause();
         }
+        return performPathPostProcessing(new MovePath(game, entity), 0);
     }
 
     @Override
@@ -1519,6 +1531,8 @@ public class Princess extends BotClient {
         if ((entity != null) && entity.getOwner().isEnemyOf(getLocalPlayer())) {
             // currently just the honor util, and only update it for hostile units
             getHonorUtil().checkEnemyBroken(entity, getForcedWithdrawal());
+        } else if(aiOrg != null) {
+            aiOrg.updateEntityForOrg(entity);
         }
     }
 
@@ -1595,6 +1609,10 @@ public class Princess extends BotClient {
         try {
             if (initialized) {
                 return; // no need to initialize twice
+            }
+
+            if(useTaskBasedAI) {
+                aiOrg = AiOrganisationHelper.createBattleGroup(this);
             }
 
             checkForDishonoredEnemies();
@@ -1772,13 +1790,15 @@ public class Princess extends BotClient {
 
     @Override
     protected void weightDeploymentCoords(List<BotClient.RankedCoords> coords, Entity entity) {
-        AiOrganisation org = battleGroup.getOrgForEntity(entity);
-        if(org != null) {
-            for (RankedCoords coordintes : coords) {
-                for(Entity entityLance : org.getUnits()) {
-                  if (entityLance.isDeployed()) {
-                      coordintes.setFitness(coordintes.getFitness() + ((float) coordintes.getCoords().distance(entityLance.getPosition()) * 100 ));
-                  }
+        if(aiOrg != null) {
+            AiOrganisation org = aiOrg.getOrgForEntity(entity);
+            if (org != null) {
+                for (RankedCoords coordintes : coords) {
+                    for (Entity entityLance : org.getUnits()) {
+                        if (entityLance.isDeployed()) {
+                            coordintes.setFitness(coordintes.getFitness() + ((float) coordintes.getCoords().distance(entityLance.getPosition()) * 100));
+                        }
+                    }
                 }
             }
         }
@@ -1786,19 +1806,24 @@ public class Princess extends BotClient {
 
     @Override
     public void executeTasks(GamePhase gamePhase) {
-        if(battleGroup != null) {
-            battleGroup.executeAiTasks(gamePhase);
+        if(gamePhase != GamePhase.LOUNGE) {
+            if (aiOrg != null) {
+                aiOrg.executeAiTasks(gamePhase);
+            } else if (aiOrg == null && useTaskBasedAI && getFriendEntities().size() > 0) {
+                aiOrg = AiOrganisationHelper.createBattleGroup(this);
+                aiOrg.executeAiTasks(gamePhase);
+            }
         }
     }
 
     @Override
     public void processTasks() {
-        if(battleGroup != null) {
-            battleGroup.processAiTasks();
+        if(aiOrg != null) {
+            aiOrg.processAiTasks();
         }
     }
 
-    IHonorUtil getHonorUtil() {
+    public IHonorUtil getHonorUtil() {
         return honorUtil;
     }
     

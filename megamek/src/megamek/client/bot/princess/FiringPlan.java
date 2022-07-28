@@ -80,7 +80,7 @@ public class FiringPlan extends ArrayList<WeaponFireInfo> implements Comparable<
      * @return The total number of expected critical hits based on the chance to hit, damage to target, toughness of
      *         target and odds of rolling a successful crit check.   This is in the units of critical hits.
      */
-    synchronized double getExpectedCriticals() {
+    public synchronized double getExpectedCriticals() {
         double expectedCriticals = 0;
         for (WeaponFireInfo weaponFireInfo : this) {
             expectedCriticals += weaponFireInfo.getExpectedCriticals();
@@ -98,7 +98,7 @@ public class FiringPlan extends ArrayList<WeaponFireInfo> implements Comparable<
      * @return The odds of getting a kill based on the odds of each individual 
      *      weapon getting a kill.  The result will be between 0 and 1.
      */
-    synchronized double getKillProbability() {
+   public synchronized double getKillProbability() {
         double surviveProbability = 1;
         
         for (WeaponFireInfo weaponFireInfo : this) {

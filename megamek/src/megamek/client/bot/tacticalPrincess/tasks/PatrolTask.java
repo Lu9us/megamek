@@ -2,6 +2,8 @@ package megamek.client.bot.tacticalPrincess.tasks;
 
 import megamek.client.bot.princess.Princess;
 import megamek.client.bot.tacticalPrincess.AiOrganisation;
+import megamek.client.bot.tacticalPrincess.tasks.state.TaskResult;
+import megamek.client.bot.tacticalPrincess.tasks.state.TaskState;
 import megamek.common.Coords;
 import megamek.common.Entity;
 import megamek.common.Hex;
@@ -15,7 +17,8 @@ public class PatrolTask extends AbstractAITask{
 
     PatrolTask(AiOrganisation org, Princess owner) {
         super(org, owner);
-        executionPhase = GamePhase.PREMOVEMENT;
+        executionPhases = new GamePhase[]{GamePhase.PREFIRING};
+
     }
     TaskResult result;
     Hex target;
@@ -24,7 +27,7 @@ public class PatrolTask extends AbstractAITask{
     private static final int MIN_PATROL_DIST = 15;
 
     @Override
-    public void iniit() {
+    public void init() {
 
     }
 
